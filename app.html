@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Naturavita</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f2ee;--sidebar-bg:#fff;--sidebar-w:230px;
+  --green:#3d7a5a;--green-dark:#2e5f44;--green-light:#e8f0eb;--green-hero:#3d7a5a;
+  --gold:#c9952a;--text:#1a1d1a;--text-sub:#6b7470;--text-muted:#9ca89e;
+  --card-bg:#fff;--border:#e8e4dc;--radius:16px;--radius-sm:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+
+/* ── AUTH WRAPPER ── */
+#auth-screen{
+  position:fixed;inset:0;background:#eef0f3;display:flex;align-items:center;
+  justify-content:center;z-index:999;padding:24px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+}
+.auth-card{background:#fff;border-radius:22px;box-shadow:0 2px 4px rgba(0,0,0,.04),0 8px 32px rgba(0,0,0,.08);padding:44px 40px 40px;width:100%;max-width:400px;animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both}
+.logo-wrap{display:flex;justify-content:center;margin-bottom:24px}
+.logo-circle{width:70px;height:70px;border-radius:50%;background:linear-gradient(145deg,#7a9060,#556445);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(85,100,69,.3)}
+.logo-circle svg{width:38px;height:38px}
+.auth-heading{text-align:center;margin-bottom:28px}
+.auth-heading h1{font-family:'DM Serif Display',serif;font-size:1.75rem;color:var(--text);letter-spacing:-.01em;margin-bottom:5px}
+.auth-heading p{font-size:.875rem;color:var(--text-sub)}
+.btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 16px;background:#fff;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;color:var(--text);cursor:pointer;transition:background .15s,border-color .15s;text-decoration:none}
+.btn-google:hover{background:#f5f6f8;border-color:#c8cdd6}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.divider span{font-size:.75rem;color:var(--text-muted);letter-spacing:.06em;font-weight:500;text-transform:uppercase}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:6px}
+.input-wrap{position:relative}
+.input-wrap .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);display:flex;align-items:center}
+.input-wrap input{width:100%;padding:11px 14px 11px 38px;background:#f5f6f8;border:1.5px solid transparent;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);outline:none;transition:border-color .15s,background .15s}
+.input-wrap input::placeholder{color:var(--text-muted)}
+.input-wrap input:focus{background:#fff;border-color:var(--green);box-shadow:0 0 0 3px rgba(61,122,90,.1)}
+.btn-signin{width:100%;padding:13px;background:#111318;color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:20px;box-shadow:0 2px 8px rgba(17,19,24,.25);transition:background .15s,transform .1s}
+.btn-signin:hover{background:#2a2d35}
+.btn-signin:active{transform:scale(.99)}
+.footer-links{display:flex;justify-content:space-between;margin-top:18px}
+.footer-links a{font-size:.8rem;color:var(--text-sub);text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:var(--text)}
+.footer-links .signup-link{font-size:.8rem;color:var(--text-sub)}
+.footer-links .signup-link a{color:var(--text);font-weight:600}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:var(--sidebar-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.sidebar-header{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.sidebar-logo{width:34px;height:34px;background:linear-gradient(145deg,#5a9070,#3d7a5a);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(61,122,90,.25);flex-shrink:0}
+.sidebar-logo svg{width:18px;height:18px}
+.sidebar-brand h2{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--text);line-height:1.1}
+.sidebar-brand p{font-size:.7rem;color:var(--text-muted)}
+.sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .15s,color .15s;font-size:.865rem;font-weight:500;color:var(--text-sub);margin-bottom:2px;text-decoration:none;user-select:none}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;opacity:.8}
+.nav-item:hover{background:var(--green-light);color:var(--green)}
+.nav-item.active{background:var(--green);color:#fff;font-weight:600}
+.nav-item.active svg{opacity:1}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border);text-align:center}
+.sidebar-footer .leaf-icon{width:28px;height:28px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px}
+.sidebar-footer p{font-size:.72rem;color:var(--text-muted);font-style:italic}
+
+/* ── MAIN ── */
+.app-shell{display:none;width:100%}
+.app-shell.visible{display:flex}
+.main{margin-left:var(--sidebar-w);flex:1;padding:36px 40px;max-width:calc(100vw - var(--sidebar-w));animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── PAGE HEADER ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px}
+.page-header-left h1{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--text);margin-bottom:3px}
+.page-header-left p{font-size:.875rem;color:var(--text-sub)}
+.btn-primary{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:600;cursor:pointer;transition:background .15s,transform .1s;text-decoration:none;white-space:nowrap}
+.btn-primary:hover{background:var(--green-dark)}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary svg{width:16px;height:16px}
+
+/* PAGE VISIBILITY */
+.page{display:none}
+.page.active{display:block;animation:fadeUp .35s cubic-bezier(.22,1,.36,1) both}
+
+/* ── CARDS ── */
+.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 28px}
+
+/* ══════════════════════════════
+   DASHBOARD
+══════════════════════════════ */
+.hero{background:linear-gradient(135deg,#3d7a5a 0%,#2e6048 60%,#265040 100%);border-radius:20px;padding:36px 40px;color:#fff;position:relative;overflow:hidden;margin-bottom:24px;box-shadow:0 4px 24px rgba(61,122,90,.3)}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:rgba(255,255,255,.05);border-radius:50%}
+.hero::after{content:'';position:absolute;bottom:-60px;right:80px;width:160px;height:160px;background:rgba(255,255,255,.04);border-radius:50%}
+.hero-tag{display:flex;align-items:center;gap:6px;font-size:.78rem;color:rgba(255,255,255,.7);margin-bottom:10px;font-weight:500}
+.hero h1{font-family:'DM Serif Display',serif;font-size:2rem;font-weight:400;margin-bottom:8px}
+.hero p{font-size:.9rem;color:rgba(255,255,255,.78);max-width:480px;line-height:1.55;margin-bottom:22px}
+.btn-hero{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.3);border-radius:10px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:600;cursor:pointer;backdrop-filter:blur(4px);transition:background .15s}
+.btn-hero:hover{background:rgba(255,255,255,.26)}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.quick-card{background:var(--card-bg);border-radius:var(--radius);padding:22px 20px;box-shadow:var(--shadow);border:1px solid var(--border);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.quick-card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.1)}
+.quick-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.quick-icon svg{width:22px;height:22px}
+.quick-icon.green{background:#e8f3ed}
+.quick-icon.orange{background:#fef3e8}
+.quick-icon.blue{background:#e8f0fb}
+.quick-icon.pink{background:#fce8f0}
+.quick-card h3{font-size:.9rem;font-weight:600;margin-bottom:3px}
+.quick-card p{font-size:.775rem;color:var(--text-muted)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.health-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#fafaf8;border-radius:10px;border:1px solid var(--border)}
+.health-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.health-icon svg{width:16px;height:16px}
+.health-icon.energy{background:#fff4e0}
+.health-icon.sleep{background:#eaf0ff}
+.health-icon.water{background:#e8f6ff}
+.health-icon.mental{background:#f0eaff}
+.health-label{font-size:.72rem;color:var(--text-muted);font-weight:500;margin-bottom:2px}
+.health-value{font-size:.9rem;font-weight:600}
+.conseil-box{background:#f0f7f3;border-radius:12px;padding:16px 18px;border-left:3px solid var(--green)}
+.conseil-box p{font-size:.875rem;line-height:1.6}
+.conseil-box strong{color:var(--green-dark);font-weight:700}
+
+/* ══════════════════════════════
+   PROFIL
+══════════════════════════════ */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card-bg);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);border:1px solid var(--border);text-align:center}
+.stat-label{font-size:.75rem;color:var(--text-muted);font-weight:500;margin-bottom:6px}
+.stat-value{font-size:1.6rem;font-weight:700;color:var(--text)}
+.stat-unit{font-size:.8rem;color:var(--text-sub);font-weight:400}
+.stat-badge{display:inline-block;margin-top:4px;font-size:.72rem;padding:2px 8px;border-radius:20px;background:var(--green-light);color:var(--green);font-weight:600}
+.profil-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.section-title{display:flex;align-items:center;gap:8px;font-size:1rem;font-weight:600;color:var(--text);margin-bottom:18px}
+.section-title svg{width:18px;height:18px;color:var(--text-sub)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-row.full{grid-template-columns:1fr;margin-bottom:14px}
+label.field-label{display:block;font-size:.78rem;font-weight:600;color:var(--text-sub);margin-bottom:5px}
+input.field, select.field, textarea.field{width:100%;padding:9px 12px;background:#f5f6f8;border:1.5px solid transparent;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.875rem;color:var(--text);outline:none;transition:border-color .15s,background .15s;resize:vertical}
+input.field:focus,select.field:focus,textarea.field:focus{background:#fff;border-color:var(--green);box-shadow:0 0 0 3px rgba(61,122,90,.1)}
+textarea.field{min-height:80px}
+select.field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca89e' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+
+/* ══════════════════════════════
+   NUTRITION
+══════════════════════════════ */
+.plan-item{background:var(--card-bg);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.plan-info h3{font-size:1rem;font-weight:600;margin-bottom:6px}
+.plan-info p{font-size:.84rem;color:var(--text-sub);line-height:1.55;max-width:640px}
+.plan-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600}
+.badge.actif{background:var(--green);color:#fff}
+.badge.termine{background:#e5e7eb;color:#6b7280}
+.badge.pause{background:#fef3e8;color:#d97706}
+.btn-icon{width:34px;height:34px;border-radius:8px;border:1.5px solid #fde8e8;background:#fff8f8;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
+.btn-icon:hover{background:#fee2e2}
+.btn-icon svg{width:15px;height:15px;color:#ef4444}
+.empty-state{background:var(--card-bg);border-radius:var(--radius);padding:60px 24px;box-shadow:var(--shadow);border:1px solid var(--border);text-align:center}
+.empty-state svg{width:48px;height:48px;color:var(--text-muted);margin:0 auto 16px;display:block}
+.empty-state h3{font-size:1.05rem;font-weight:600;margin-bottom:6px}
+.empty-state p{font-size:.875rem;color:var(--text-sub)}
+
+/* ══════════════════════════════
+   ACTIVITE PHYSIQUE
+══════════════════════════════ */
+.activity-summary{background:var(--card-bg);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px}
+.activity-summary p{font-size:.9rem;color:var(--text);line-height:1.6;margin-bottom:10px}
+.weekly-badge{display:inline-block;padding:6px 14px;background:var(--green);color:#fff;border-radius:20px;font-size:.8rem;font-weight:600}
+.activities-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.activity-card{background:var(--card-bg);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.activity-card h3{font-size:.975rem;font-weight:700;margin-bottom:6px}
+.activity-card .desc{font-size:.825rem;color:var(--text-sub);line-height:1.5;margin-bottom:14px}
+.activity-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:.73rem;font-weight:500;background:#f0f0ec;color:var(--text-sub);border:1px solid var(--border)}
+.tag.intensity{background:#fce8e8;color:#c0392b;border-color:#f8d0d0}
+.tag.intensity.basse{background:#e8f3ed;color:var(--green);border-color:#d0e8d8}
+.tag.intensity.mod{background:#fef3e8;color:#d97706;border-color:#fde0b0}
+.benefits-list{font-size:.8rem;color:var(--text-sub);line-height:1.8}
+.benefits-list li{list-style:none;padding-left:12px;position:relative}
+.benefits-list li::before{content:'•';position:absolute;left:0;color:var(--green)}
+.tip-box{background:#fffbf0;border-radius:9px;padding:10px 12px;margin-top:12px;border-left:2px solid var(--gold)}
+.tip-box p{font-size:.78rem;color:var(--text-sub);line-height:1.5}
+
+/* ══════════════════════════════
+   EVOLUTION
+══════════════════════════════ */
+
+/* ══════════════════════════════
+   PRODUITS
+══════════════════════════════ */
+.tab-pills{display:flex;gap:8px;margin-bottom:24px}
+.tab-pill{padding:8px 18px;border-radius:20px;font-size:.875rem;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--card-bg);color:var(--text-sub);transition:all .15s}
+.tab-pill.active{background:var(--card-bg);border-color:var(--text);color:var(--text);font-weight:600}
+.scanner-box{background:var(--card-bg);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.btn-scan{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.925rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+.btn-scan:hover{background:var(--green-dark)}
+.scan-divider{text-align:center;color:var(--text-muted);font-size:.8rem;margin:16px 0;position:relative}
+.scan-divider::before,.scan-divider::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--border)}
+.scan-divider::before{left:0}.scan-divider::after{right:0}
+.barcode-input-wrap{position:relative}
+.barcode-input-wrap input{width:100%;padding:11px 40px 11px 14px;background:#f5f6f8;border:1.5px solid transparent;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .15s}
+.barcode-input-wrap input:focus{background:#fff;border-color:var(--green)}
+.barcode-input-wrap button{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted)}
+.loading-state{text-align:center;padding:40px}
+.loading-state svg{width:40px;height:40px;color:var(--text-muted);margin:0 auto 12px;display:block;animation:spin 2s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.loading-state p{font-size:.875rem;color:var(--text-sub)}
+
+/* ══════════════════════════════
+   COMMUNAUTÉ
+══════════════════════════════ */
+.filter-pills{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.filter-pill{padding:6px 16px;border-radius:20px;font-size:.84rem;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--card-bg);color:var(--text-sub);transition:all .15s}
+.filter-pill.active{background:var(--text);border-color:var(--text);color:#fff;font-weight:600}
+.post-card{background:var(--card-bg);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:14px}
+.post-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.post-author{display:flex;align-items:center;gap:8px}
+.post-avatar{width:32px;height:32px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;color:var(--green)}
+.post-meta{font-size:.8rem;color:var(--text-muted)}
+.post-title{font-size:.975rem;font-weight:600;margin-bottom:6px}
+.post-content{font-size:.855rem;color:var(--text-sub);line-height:1.6;margin-bottom:12px}
+.post-footer{display:flex;align-items:center;gap:12px}
+.post-like{display:flex;align-items:center;gap:5px;font-size:.8rem;color:var(--text-muted);cursor:pointer;padding:4px 8px;border-radius:6px;transition:background .15s}
+.post-like:hover{background:var(--green-light);color:var(--green)}
+
+/* ══════════════════════════════
+   CARTE BIO
+══════════════════════════════ */
+#map{height:480px;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.map-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.map-btn{padding:8px 16px;border-radius:20px;font-size:.84rem;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;display:inline-flex;align-items:center;gap:6px}
+.map-btn.locate{background:var(--green);color:#fff}
+.map-btn.bio{background:#22c55e;color:#fff}
+.map-btn.herbo{background:#a855f7;color:#fff}
+.map-btn.ferme{background:#f97316;color:#fff}
+.map-btn.epice{background:#3b82f6;color:#fff}
+.map-btn:hover{opacity:.85}
+
+/* ══════════════════════════════
+   STRAVA
+══════════════════════════════ */
+.strava-info{background:#fff8f0;border-radius:var(--radius);padding:20px 24px;border:1.5px solid #fde0b0;margin-bottom:20px}
+.strava-info h3{font-size:.9rem;font-weight:700;color:#d97706;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.strava-info ol{padding-left:20px;font-size:.855rem;color:var(--text-sub);line-height:2}
+.strava-info ol li strong{color:var(--text)}
+.upload-zone{background:var(--card-bg);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.upload-area{border:2px dashed #d1d5c8;border-radius:12px;padding:50px 24px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.upload-area:hover{border-color:var(--green);background:var(--green-light)}
+.upload-area svg{width:38px;height:38px;color:#d97706;margin:0 auto 14px;display:block}
+.upload-area h3{font-size:.975rem;font-weight:600;margin-bottom:4px}
+.upload-area p{font-size:.82rem;color:var(--text-muted)}
+
+/* ══════════════════════════════
+   CONSULTATIONS VISIO
+══════════════════════════════ */
+.tab-btns{display:flex;gap:8px;margin-bottom:24px}
+.tab-btn{padding:8px 20px;border-radius:20px;font-size:.875rem;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--card-bg);color:var(--text-sub);transition:all .15s}
+.tab-btn.active{background:var(--text);border-color:var(--text);color:#fff;font-weight:600}
+.doctors-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.doctor-card{background:var(--card-bg);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.doctor-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px}
+.doctor-avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#e0e0e0;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.doctor-info{flex:1}
+.doctor-name-row{display:flex;align-items:center;justify-content:space-between}
+.doctor-name{font-size:.975rem;font-weight:700}
+.doctor-price{font-size:1rem;font-weight:700;color:var(--text)}
+.doctor-spec{font-size:.8rem;color:var(--green);font-weight:600;margin-bottom:4px}
+.stars{color:#f59e0b;font-size:.85rem;margin-bottom:2px}
+.stars span{color:var(--text-muted);font-size:.78rem;margin-left:4px}
+.doctor-desc{font-size:.82rem;color:var(--text-sub);line-height:1.55;margin-bottom:12px}
+.doctor-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.dtag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:.73rem;font-weight:500;background:#f5f5f0;color:var(--text-sub);border:1px solid var(--border)}
+.dtag.visio{background:#e8f3ed;color:var(--green);border-color:#c8e0d0}
+.btn-rdv{width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+.btn-rdv:hover{background:var(--green-dark)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:480px;animation:fadeUp .3s cubic-bezier(.22,1,.36,1) both}
+.modal h2{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:6px}
+.modal p.sub{font-size:.875rem;color:var(--text-sub);margin-bottom:24px}
+.modal-footer{display:flex;gap:10px;margin-top:24px;justify-content:flex-end}
+.btn-cancel{padding:10px 18px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;cursor:pointer;color:var(--text-sub)}
+.btn-cancel:hover{background:#e8e4dc}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ AUTH SCREEN ══════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="logo-wrap">
+      <div class="logo-circle">
+        <svg viewBox="0 0 64 64" fill="none"><path d="M32 4C32 4 28 14 20 16C24 16 26 18 26 18C20 22 14 28 16 38C19 34 22 33 22 33C21 38 22 44 28 50L30 44C30 44 31 52 32 58C33 52 34 44 34 44L36 50C42 44 43 38 42 33C42 33 45 34 48 38C50 28 44 22 38 18C38 18 40 16 44 16C36 14 32 4 32 4Z" fill="url(#g1)"/><defs><linearGradient id="g1" x1="16" y1="4" x2="48" y2="58"><stop offset="0%" stop-color="#f0c040"/><stop offset="100%" stop-color="#c07a10"/></linearGradient></defs></svg>
+      </div>
+    </div>
+    <div class="auth-heading">
+      <h1>Welcome to Naturavita</h1>
+      <p>Sign in to continue</p>
+    </div>
+    <button class="btn-google">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.233 17.64 11.925 17.64 9.2z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <div class="divider"><span>or</span></div>
+    <div class="form-group">
+      <label>Email</label>
+      <div class="input-wrap">
+        <span class="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg></span>
+        <input type="email" id="loginEmail" placeholder="you@example.com"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <div class="input-wrap">
+        <span class="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <input type="password" id="loginPwd" placeholder="••••••••"/>
+      </div>
+    </div>
+    <button class="btn-signin" onclick="doLogin()">Sign in</button>
+    <div class="footer-links">
+      <a href="#">Forgot password?</a>
+      <span class="signup-link">Need an account? <a href="#">Sign up</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ APP SHELL ══════════════ -->
+<div class="app-shell" id="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" style="animation:slideIn .4s cubic-bezier(.22,1,.36,1) both">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 64 64" fill="none"><path d="M32 6C32 6 28 15 20 17C24 17 26 19 26 19C20 23 14 29 16 39C19 35 22 34 22 34C21 39 22 45 28 51L30 45C30 45 31 53 32 58C33 53 34 45 34 45L36 51C42 45 43 39 42 34C42 34 45 35 48 39C50 29 44 23 38 19C38 19 40 17 44 17C36 15 32 6 32 6Z" fill="white" opacity=".92"/></svg>
+      </div>
+      <div class="sidebar-brand"><h2>NaturoVie</h2><p>Votre santé naturelle</p></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-page="dashboard" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Tableau de bord
+      </a>
+      <a class="nav-item" data-page="profil" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Mon Profil
+      </a>
+      <a class="nav-item" data-page="nutrition" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h12M3 18h8"/><circle cx="19" cy="17" r="3"/></svg>Nutrition
+      </a>
+      <a class="nav-item" data-page="cures" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Cures &amp; Détox
+      </a>
+      <a class="nav-item" data-page="activite" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Activité Physique
+      </a>
+      <a class="nav-item" data-page="evolution" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Mon Évolution
+      </a>
+      <a class="nav-item" data-page="produits" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Produits
+      </a>
+      <a class="nav-item" data-page="communaute" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Communauté
+      </a>
+      <a class="nav-item" data-page="carte" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Carte bio
+      </a>
+      <a class="nav-item" data-page="strava" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Strava
+      </a>
+      <a class="nav-item" data-page="visio" onclick="navigate(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="15" height="12" rx="2"/><path d="M17 9l5-3v12l-5-3"/></svg>Consultations Visio
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="leaf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#3d7a5a" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <p>La nature est votre meilleure alliée</p>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="page active" id="page-dashboard">
+      <div class="hero">
+        <div class="hero-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>NaturoVie</div>
+        <h1>Bonjour, xinej66871 🌿</h1>
+        <p>Votre parcours vers une santé naturelle continue. Découvrez vos recommandations personnalisées du jour.</p>
+        <button class="btn-hero" onclick="navigate(document.querySelector('[data-page=nutrition]'))">Voir mes recommandations →</button>
+      </div>
+      <div class="grid-4">
+        <div class="quick-card" onclick="navigate(document.querySelector('[data-page=nutrition]'))">
+          <div class="quick-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#3d7a5a" stroke-width="2"><path d="M3 6h18M3 12h12M3 18h8"/><circle cx="19" cy="17" r="3"/></svg></div>
+          <h3>Plan Nutrition</h3><p>Créer un régime</p>
+        </div>
+        <div class="quick-card" onclick="navigate(document.querySelector('[data-page=cures]'))">
+          <div class="quick-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <h3>Cures &amp; Détox</h3><p>Programmes de purification</p>
+        </div>
+        <div class="quick-card" onclick="navigate(document.querySelector('[data-page=activite]'))">
+          <div class="quick-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+          <h3>Activité Physique</h3><p>Exercices personnalisés</p>
+        </div>
+        <div class="quick-card" onclick="navigate(document.querySelector('[data-page=evolution]'))">
+          <div class="quick-icon pink"><svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <h3>Mon Évolution</h3><p>Suivre mes progrès</p>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2 style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:18px">Aperçu Santé</h2>
+          <div class="health-grid">
+            <div class="health-item"><div class="health-icon energy"><svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><div><div class="health-label">Énergie</div><div class="health-value">Bon</div></div></div>
+            <div class="health-item"><div class="health-icon sleep"><svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg></div><div><div class="health-label">Sommeil</div><div class="health-value">Bonne</div></div></div>
+            <div class="health-item"><div class="health-icon water"><svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg></div><div><div class="health-label">Hydratation</div><div class="health-value">? L/Jour</div></div></div>
+            <div class="health-item"><div class="health-icon mental"><svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2"><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="12" r="10"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div><div class="health-label">Mental</div><div class="health-value">Bon</div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2 style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:18px">Conseil du jour</h2>
+          <div class="conseil-box"><p>🌱 <strong>Hydratation matinale :</strong> Commencez votre journée avec un verre d'eau tiède et du citron. Cette habitude simple stimule votre système digestif, aide à la détoxification du foie et booste votre métabolisme dès le réveil.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MON PROFIL ── -->
+    <div class="page" id="page-profil">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Mon Profil Santé</h1><p>Gérez vos informations personnelles</p></div>
+        <button class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Sauvegarder</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Âge</div><div class="stat-value">31</div></div>
+        <div class="stat-card"><div class="stat-label">Poids</div><div class="stat-value">74 <span class="stat-unit">kg</span></div></div>
+        <div class="stat-card"><div class="stat-label">Taille</div><div class="stat-value">188 <span class="stat-unit">cm</span></div></div>
+        <div class="stat-card"><div class="stat-label">IMC</div><div class="stat-value">20.9</div><span class="stat-badge">Normal</span></div>
+      </div>
+      <div class="profil-grid">
+        <div class="card">
+          <div class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Informations personnelles</div>
+          <div class="form-row">
+            <div><label class="field-label">Âge</label><input class="field" type="number" value="31"/></div>
+            <div><label class="field-label">Genre</label><select class="field"><option>Homme</option><option>Femme</option><option>Autre</option></select></div>
+          </div>
+          <div class="form-row">
+            <div><label class="field-label">Taille (cm)</label><input class="field" type="number" value="188"/></div>
+            <div><label class="field-label">Poids (kg)</label><input class="field" type="number" value="74"/></div>
+          </div>
+          <div class="form-row">
+            <div><label class="field-label">Niveau d'activité</label><select class="field"><option>Sédentaire</option><option>Léger</option><option selected>Modéré</option><option>Actif</option><option>Très actif</option></select></div>
+            <div><label class="field-label">Qualité du sommeil</label><select class="field"><option>Très mauvaise</option><option>Mauvaise</option><option>Moyenne</option><option selected>Bonne</option><option>Excellente</option></select></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>Santé</div>
+          <div class="form-row full"><div><label class="field-label">Problèmes de santé</label><textarea class="field" placeholder="Décrivez vos problèmes de santé actuels..."></textarea></div></div>
+          <div class="form-row full"><div><label class="field-label">Allergies</label><textarea class="field" placeholder="Allergies connues..."></textarea></div></div>
+          <div class="form-row full"><div><label class="field-label">Objectifs</label><textarea class="field">plus d'énergie, prise de muscle, meilleur sommeil</textarea></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── NUTRITION ── -->
+    <div class="page" id="page-nutrition">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Nutrition</h1><p>Plans alimentaires personnalisés selon votre profil</p></div>
+        <button class="btn-primary" onclick="openModal('modal-nutrition')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nouveau plan</button>
+      </div>
+      <div class="plan-item">
+        <div class="plan-info">
+          <h3>Plan Nutritionnel de 7 Jours</h3>
+          <p>Ce plan nutritionnel est conçu sur mesure pour un homme de 31 ans cherchant à augmenter son énergie, à prendre du muscle et à améliorer la qualité de son sommeil. Les repas privilégient des aliments complets et naturels.</p>
+        </div>
+        <div class="plan-actions">
+          <span class="badge actif">Actif</span>
+          <button class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CURES & DÉTOX ── -->
+    <div class="page" id="page-cures">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Cures &amp; Détox</h1><p>Programmes de purification naturels</p></div>
+        <button class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nouvelle cure</button>
+      </div>
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <h3>Aucune cure en cours</h3>
+        <p>Créez votre première cure ou programme détox personnalisé</p>
+      </div>
+    </div>
+
+    <!-- ── ACTIVITÉ PHYSIQUE ── -->
+    <div class="page" id="page-activite">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Activité Physique</h1><p>Programme d'exercices adapté à votre profil</p></div>
+        <button class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Régénérer</button>
+      </div>
+      <div class="activity-summary">
+        <p>Programme d'activité physique personnalisé pour un homme de 31 ans visant à augmenter l'énergie, prendre du muscle et améliorer le sommeil.</p>
+        <span class="weekly-badge">5 jours d'activités variées incluant des exercices de renforcement musculaire et des activités douces pour le bien-être général.</span>
+      </div>
+      <div class="activities-grid">
+        <div class="activity-card">
+          <h3>Entraînement en force</h3>
+          <p class="desc">Exercices de musculation avec poids libres et machines pour augmenter la masse musculaire.</p>
+          <div class="activity-tags">
+            <span class="tag">🗓 3 fois par semaine, jours non consécutifs</span>
+            <span class="tag">⏱ 60 minutes</span>
+            <span class="tag intensity">Élevée</span>
+          </div>
+          <div class="benefits-list"><p style="font-size:.8rem;font-weight:600;margin-bottom:4px">Bienfaits:</p><ul><li>Augmentation de la masse musculaire</li><li>Amélioration de la force</li><li>Stimulation du métabolisme</li></ul></div>
+          <div class="tip-box"><p>💡 Concentrez-vous sur des mouvements composés comme les squats, les soulevés de terre et les développés.</p></div>
+        </div>
+        <div class="activity-card">
+          <h3>Yoga</h3>
+          <p class="desc">Séance de yoga pour améliorer la flexibilité, la relaxation et diminuer les niveaux de stress.</p>
+          <div class="activity-tags">
+            <span class="tag">🗓 2 fois par semaine</span>
+            <span class="tag">⏱ 45 minutes</span>
+            <span class="tag intensity basse">Basse</span>
+          </div>
+          <div class="benefits-list"><p style="font-size:.8rem;font-weight:600;margin-bottom:4px">Bienfaits:</p><ul><li>Amélioration de la flexibilité</li><li>Réduction du stress</li><li>Amélioration de la qualité du sommeil</li></ul></div>
+          <div class="tip-box"><p>💡 Pratiquez à la fin de la journée pour favoriser la relaxation.</p></div>
+        </div>
+        <div class="activity-card">
+          <h3>Cardio (course à pied ou vélo)</h3>
+          <p class="desc">Activité cardio pour améliorer l'endurance et la santé cardiovasculaire.</p>
+          <div class="activity-tags">
+            <span class="tag">🗓 2 fois par semaine</span>
+            <span class="tag">⏱ 30-45 minutes</span>
+            <span class="tag intensity mod">Modérée à Élevée</span>
+          </div>
+          <div class="benefits-list"><p style="font-size:.8rem;font-weight:600;margin-bottom:4px">Bienfaits:</p><ul><li>Amélioration de l'endurance</li><li>Argentée des niveaux d'énergie</li><li>Aide au sommeil</li></ul></div>
+          <div class="tip-box"><p>💡 Choisissez un rythme qui vous permet de parler mais reste un effort.</p></div>
+        </div>
+        <div class="activity-card">
+          <h3>Qi Gong</h3>
+          <p class="desc">Séance de Qi Gong pour le bien-être mental et physique, à pratiquer en plein air si possible.</p>
+          <div class="activity-tags">
+            <span class="tag">🗓 1-2 fois par semaine</span>
+            <span class="tag">⏱ 30 minutes</span>
+            <span class="tag intensity basse">Basse</span>
+          </div>
+          <div class="benefits-list"><p style="font-size:.8rem;font-weight:600;margin-bottom:4px">Bienfaits:</p><ul><li>Amélioration de la circulation</li><li>Réduction du stress</li><li>Amélioration de la concentration</li></ul></div>
+          <div class="tip-box"><p>💡 Visualisez votre respiration pour vous aider à vous concentrer.</p></div>
+        </div>
+        <div class="activity-card">
+          <h3>Étirements actifs</h3>
+          <p class="desc">Routine d'étirements pour améliorer la souplesse et prévenir les blessures.</p>
+          <div class="activity-tags">
+            <span class="tag">🗓 Après chaque séance d'entraînement</span>
+            <span class="tag">⏱ 10-15 minutes</span>
+            <span class="tag intensity basse">Basse</span>
+          </div>
+          <div class="benefits-list"><p style="font-size:.8rem;font-weight:600;margin-bottom:4px">Bienfaits:</p><ul><li>Prévention des blessures</li><li>Amélioration de la souplesse</li><li>Récupération plus rapide</li><li>Meilleure circulation sanguine</li></ul></div>
+          <div class="tip-box"><p>💡 Incorporez des étirements dynamiques au début et statiques à la fin.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MON ÉVOLUTION ── -->
+    <div class="page" id="page-evolution">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Mon Évolution</h1><p>Suivez votre progression au quotidien</p></div>
+        <button class="btn-primary" onclick="openModal('modal-evolution')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nouvelle entrée</button>
+      </div>
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <h3>Commencez votre suivi</h3>
+        <p>Ajoutez votre première entrée pour suivre votre évolution.</p>
+      </div>
+    </div>
+
+    <!-- ── PRODUITS ── -->
+    <div class="page" id="page-produits">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Produits Naturels</h1><p>Recommandations personnalisées et analyse de produits</p></div>
+      </div>
+      <div class="tab-pills">
+        <button class="tab-pill" onclick="switchProduitTab('recommandations',this)">Mes recommandations</button>
+        <button class="tab-pill active" onclick="switchProduitTab('scanner',this)">Scanner un produit</button>
+      </div>
+      <div id="produit-recommandations" style="display:none">
+        <div class="empty-state" style="padding:50px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+          <h3>Chargement des recommandations...</h3>
+          <p>Nous analysons votre profil pour vous suggérer les meilleurs produits naturels.</p>
+        </div>
+      </div>
+      <div id="produit-scanner">
+        <div class="scanner-box">
+          <button class="btn-scan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="14"/><line x1="17.5" y1="17.5" x2="21" y2="21"/></svg>
+            Scanner un code-barres
+          </button>
+          <div class="scan-divider">ou saisir manuellement</div>
+          <div class="barcode-input-wrap">
+            <input type="text" placeholder="Code-barres (ex: 3017620422003)" id="barcodeInput"/>
+            <button onclick="searchProduct()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+          </div>
+        </div>
+        <div id="product-result" style="margin-top:16px;display:none">
+          <div class="loading-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <p>Recherche des meilleurs produits...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COMMUNAUTÉ ── -->
+    <div class="page" id="page-communaute">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Communauté</h1><p>Partagez vos expériences et connectez-vous</p></div>
+        <button class="btn-primary" onclick="openModal('modal-post')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nouveau post</button>
+      </div>
+      <div class="filter-pills">
+        <button class="filter-pill active" onclick="filterCommunity('tout',this)">Tout</button>
+        <button class="filter-pill" onclick="filterCommunity('experience',this)">Expérience</button>
+        <button class="filter-pill" onclick="filterCommunity('question',this)">Question</button>
+        <button class="filter-pill" onclick="filterCommunity('conseil',this)">Conseil</button>
+        <button class="filter-pill" onclick="filterCommunity('temoignage',this)">Témoignage</button>
+        <button class="filter-pill" onclick="filterCommunity('recette',this)">Recette</button>
+      </div>
+      <div id="posts-container">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <h3>Aucun post pour le moment</h3>
+          <p>Soyez le premier à partager votre expérience !</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CARTE BIO ── -->
+    <div class="page" id="page-carte">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Carte des lieux bio</h1><p>Magasins bio, herboristeries et fermes près de chez vous</p></div>
+      </div>
+      <div class="map-filters">
+        <button class="map-btn locate" onclick="locateUser()">📍 Me localiser</button>
+        <button class="map-btn bio">🌿 Magasin bio</button>
+        <button class="map-btn herbo">🌸 Herboristerie</button>
+        <button class="map-btn ferme">🍊 Ferme</button>
+        <button class="map-btn epice">🫐 Épicerie santé</button>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <!-- ── STRAVA ── -->
+    <div class="page" id="page-strava">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;background:#fc4c02;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;color:white;font-weight:900">S</span>Strava</h1>
+          <p>Importez vos activités depuis Strava</p>
+        </div>
+      </div>
+      <div class="strava-info">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Comment exporter depuis Strava ?</h3>
+        <ol>
+          <li>Allez sur <strong>strava.com</strong> → Mon Compte → Paramètres</li>
+          <li>Cliquez sur <strong>"Mes données"</strong> → <strong>"Exporter vos données"</strong></li>
+          <li>Téléchargez l'archive ZIP et ouvrez le fichier <strong>activities.csv</strong></li>
+          <li>Importez ce fichier ci-dessous</li>
+        </ol>
+      </div>
+      <div class="upload-zone">
+        <div class="upload-area" onclick="document.getElementById('csvInput').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <h3>Cliquez pour importer activities.csv</h3>
+          <p>Fichier CSV exporté depuis Strava</p>
+        </div>
+        <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="handleCSV(this)"/>
+      </div>
+    </div>
+
+    <!-- ── CONSULTATIONS VISIO ── -->
+    <div class="page" id="page-visio">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Consultations Visio</h1><p>Prenez rendez-vous avec un naturopathe certifié</p></div>
+      </div>
+      <div class="tab-btns">
+        <button class="tab-btn active">Annuaire</button>
+        <button class="tab-btn">Mes RDV</button>
+      </div>
+      <div class="doctors-grid">
+        <div class="doctor-card">
+          <div class="doctor-header">
+            <div class="doctor-avatar">👨‍⚕️</div>
+            <div class="doctor-info">
+              <div class="doctor-name-row"><span class="doctor-name">Marc Leblond</span><span class="doctor-price">75€</span></div>
+              <div class="doctor-spec">Sport &amp; Performance</div>
+              <div class="stars">★★★★★ <span>(98 avis)</span></div>
+            </div>
+          </div>
+          <p class="doctor-desc">Naturopathe et ancien sportif de haut niveau. Je me spécialise dans l'accompagnement des sportifs : récupération, nutrition sportive...</p>
+          <div class="doctor-tags"><span class="dtag">⏱ 9 ans d'exp.</span><span class="dtag">🌐 Français, Anglais</span><span class="dtag visio">📹 Visio</span></div>
+          <button class="btn-rdv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="7" width="15" height="12" rx="2"/><path d="M17 9l5-3v12l-5-3"/></svg>Prendre rendez-vous</button>
+        </div>
+        <div class="doctor-card">
+          <div class="doctor-header">
+            <div class="doctor-avatar">👨‍💼</div>
+            <div class="doctor-info">
+              <div class="doctor-name-row"><span class="doctor-name">Pierre Fontaine</span><span class="doctor-price">70€</span></div>
+              <div class="doctor-spec">Phytothérapie &amp; Stress</div>
+              <div class="stars">★★★★★ <span>(87 avis)</span></div>
+            </div>
+          </div>
+          <p class="doctor-desc">Naturopathe et herboriste depuis 12 ans. Expert en gestion du stress, burn-out et troubles du sommeil via les plantes médicinales...</p>
+          <div class="doctor-tags"><span class="dtag">⏱ 12 ans d'exp.</span><span class="dtag">🌐 Français</span><span class="dtag visio">📹 Visio</span></div>
+          <button class="btn-rdv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="7" width="15" height="12" rx="2"/><path d="M17 9l5-3v12l-5-3"/></svg>Prendre rendez-vous</button>
+        </div>
+        <div class="doctor-card">
+          <div class="doctor-header">
+            <div class="doctor-avatar">👩‍⚕️</div>
+            <div class="doctor-info">
+              <div class="doctor-name-row"><span class="doctor-name">Sophie Marchand</span><span class="doctor-price">65€</span></div>
+              <div class="doctor-spec">Nutrition &amp; Microbiote</div>
+              <div class="stars">★★★★★ <span>(124 avis)</span></div>
+            </div>
+          </div>
+          <p class="doctor-desc">Naturopathe certifiée FENA avec 8 ans d'expérience. Spécialisée en nutrition fonctionnelle, santé digestive et rééquilibrage du microbiote...</p>
+          <div class="doctor-tags"><span class="dtag">⏱ 8 ans d'exp.</span><span class="dtag">🌐 Français, Anglais</span><span class="dtag visio">📹 Visio</span></div>
+          <button class="btn-rdv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="7" width="15" height="12" rx="2"/><path d="M17 9l5-3v12l-5-3"/></svg>Prendre rendez-vous</button>
+        </div>
+        <div class="doctor-card">
+          <div class="doctor-header">
+            <div class="doctor-avatar">👩‍💼</div>
+            <div class="doctor-info">
+              <div class="doctor-name-row"><span class="doctor-name">Camille Rousseau</span><span class="doctor-price">55€</span></div>
+              <div class="doctor-spec">Detox &amp; Vitalité</div>
+              <div class="stars">★★★★☆ <span>(62 avis)</span></div>
+            </div>
+          </div>
+          <p class="doctor-desc">Passionnée par la naturopathie depuis 6 ans, je vous accompagne dans les cures détox, la prise en charge de la fatigue chronique...</p>
+          <div class="doctor-tags"><span class="dtag">⏱ 6 ans d'exp.</span><span class="dtag">🌐 Français, Espagnol</span><span class="dtag visio">📹 Visio</span></div>
+          <button class="btn-rdv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="7" width="15" height="12" rx="2"/><path d="M17 9l5-3v12l-5-3"/></svg>Prendre rendez-vous</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══ MODALS ══ -->
+<!-- Modal Nouveau Plan Nutrition -->
+<div class="modal-overlay" id="modal-nutrition" onclick="closeModalOutside(event,'modal-nutrition')">
+  <div class="modal">
+    <h2>Nouveau plan nutritionnel</h2>
+    <p class="sub">Générez un plan personnalisé selon votre profil de santé.</p>
+    <div class="form-row full"><div><label class="field-label">Titre du plan</label><input class="field" type="text" placeholder="Ex: Plan détox 14 jours"/></div></div>
+    <div class="form-row full"><div><label class="field-label">Durée (jours)</label><input class="field" type="number" value="7"/></div></div>
+    <div class="form-row full"><div><label class="field-label">Objectif principal</label><select class="field"><option>Perte de poids</option><option>Prise de masse</option><option>Énergie & vitalité</option><option>Détox</option><option>Sommeil</option></select></div></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-nutrition')">Annuler</button>
+      <button class="btn-primary" onclick="closeModal('modal-nutrition')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 8v4l3 3"/></svg>Générer avec l'IA</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nouvelle Entrée Évolution -->
+<div class="modal-overlay" id="modal-evolution" onclick="closeModalOutside(event,'modal-evolution')">
+  <div class="modal">
+    <h2>Nouvelle entrée du jour</h2>
+    <p class="sub">Enregistrez votre état de santé du jour.</p>
+    <div class="form-row">
+      <div><label class="field-label">Poids (kg)</label><input class="field" type="number" placeholder="74"/></div>
+      <div><label class="field-label">Eau (litres)</label><input class="field" type="number" placeholder="2" step="0.1"/></div>
+    </div>
+    <div class="form-row">
+      <div><label class="field-label">Énergie (1-10)</label><input class="field" type="range" min="1" max="10" value="7" oninput="this.nextElementSibling.textContent=this.value"/><span style="font-size:.8rem;color:var(--text-sub);margin-top:2px;display:block">7</span></div>
+      <div><label class="field-label">Humeur (1-10)</label><input class="field" type="range" min="1" max="10" value="7" oninput="this.nextElementSibling.textContent=this.value"/><span style="font-size:.8rem;color:var(--text-sub);margin-top:2px;display:block">7</span></div>
+    </div>
+    <div class="form-row">
+      <div><label class="field-label">Sommeil (1-10)</label><input class="field" type="range" min="1" max="10" value="7" oninput="this.nextElementSibling.textContent=this.value"/><span style="font-size:.8rem;color:var(--text-sub);margin-top:2px;display:block">7</span></div>
+      <div><label class="field-label">Digestion (1-10)</label><input class="field" type="range" min="1" max="10" value="7" oninput="this.nextElementSibling.textContent=this.value"/><span style="font-size:.8rem;color:var(--text-sub);margin-top:2px;display:block">7</span></div>
+    </div>
+    <div class="form-row full"><div><label class="field-label">Notes</label><textarea class="field" placeholder="Comment vous sentez-vous aujourd'hui ?"></textarea></div></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-evolution')">Annuler</button>
+      <button class="btn-primary" onclick="saveEvolution()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nouveau Post -->
+<div class="modal-overlay" id="modal-post" onclick="closeModalOutside(event,'modal-post')">
+  <div class="modal">
+    <h2>Nouveau post</h2>
+    <p class="sub">Partagez votre expérience avec la communauté.</p>
+    <div class="form-row full"><div><label class="field-label">Titre</label><input class="field" type="text" placeholder="Titre de votre post..." id="postTitle"/></div></div>
+    <div class="form-row full"><div><label class="field-label">Catégorie</label><select class="field" id="postCategory"><option value="experience">Expérience</option><option value="question">Question</option><option value="conseil">Conseil</option><option value="temoignage">Témoignage</option><option value="recette">Recette</option></select></div></div>
+    <div class="form-row full"><div><label class="field-label">Contenu</label><textarea class="field" placeholder="Partagez votre expérience..." id="postContent" style="min-height:100px"></textarea></div></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-post')">Annuler</button>
+      <button class="btn-primary" onclick="publishPost()">Publier</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let mapInstance = null;
+let posts = [];
+
+// ── AUTH ──
+function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pwd = document.getElementById('loginPwd').value;
+  if (!email || !pwd) {
+    const btn = document.querySelector('.btn-signin');
+    btn.textContent = 'Veuillez remplir tous les champs';
+    btn.style.background = '#c0392b';
+    setTimeout(() => { btn.style.background = ''; btn.textContent = 'Sign in'; }, 2000);
+    return;
+  }
+  document.getElementById('auth-screen').style.opacity = '0';
+  document.getElementById('auth-screen').style.transition = 'opacity .3s';
+  setTimeout(() => {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-shell').classList.add('visible');
+  }, 300);
+}
+
+// Also allow pressing Enter
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('auth-screen').style.display !== 'none') doLogin();
+});
+
+// ── NAVIGATION ──
+function navigate(el) {
+  const page = el.getAttribute('data-page');
+  if (!page) return;
+  // Update sidebar
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  // Show page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  // Init map if needed
+  if (page === 'carte' && !mapInstance) setTimeout(initMap, 100);
+  window.scrollTo(0, 0);
+}
+
+// ── MAP ──
+function initMap() {
+  mapInstance = L.map('map').setView([46.5, 2.5], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org">OpenStreetMap</a>'
+  }).addTo(mapInstance);
+  // Sample markers
+  const places = [
+    {lat:48.85,lng:2.35,name:'Bio c\' Bon Paris',type:'bio'},
+    {lat:43.30,lng:5.38,name:'Herboristerie Marseille',type:'herbo'},
+    {lat:45.75,lng:4.84,name:'Épicerie Santé Lyon',type:'epice'},
+    {lat:46.58,lng:0.34,name:'Ferme Bio Poitiers',type:'ferme'},
+  ];
+  places.forEach(p => {
+    const color = {bio:'#22c55e',herbo:'#a855f7',epice:'#3b82f6',ferme:'#f97316'}[p.type];
+    const icon = L.divIcon({html:`<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>`,className:'',iconSize:[12,12]});
+    L.marker([p.lat,p.lng],{icon}).addTo(mapInstance).bindPopup(`<strong>${p.name}</strong>`);
+  });
+}
+
+function locateUser() {
+  if (!mapInstance) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 12);
+  }, () => {
+    mapInstance.setView([46.58, 0.34], 12); // Default to Poitiers
+  });
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalOutside(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+// ── PRODUITS ──
+function switchProduitTab(tab, el) {
+  document.querySelectorAll('.tab-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('produit-recommandations').style.display = tab === 'recommandations' ? 'block' : 'none';
+  document.getElementById('produit-scanner').style.display = tab === 'scanner' ? 'block' : 'none';
+  if (tab === 'recommandations') loadRecommandations();
+}
+
+function loadRecommandations() {
+  const container = document.getElementById('produit-recommandations');
+  container.innerHTML = `<div class="loading-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><p>Recherche des meilleurs produits...</p></div>`;
+  // Simulate load
+  setTimeout(() => {
+    container.innerHTML = `
+      <div class="plan-item"><div class="plan-info"><h3>🌿 Spiruline Bio</h3><p>Recommandée pour votre niveau d'énergie et vos objectifs de prise de masse musculaire. Riche en protéines végétales et vitamines B.</p></div><div class="plan-actions"><span class="badge actif">Recommandé</span></div></div>
+      <div class="plan-item"><div class="plan-info"><h3>🍋 Magnésium Marin</h3><p>Idéal pour améliorer la qualité du sommeil et réduire la fatigue. Complément naturel issu des algues marines.</p></div><div class="plan-actions"><span class="badge actif">Recommandé</span></div></div>
+      <div class="plan-item"><div class="plan-info"><h3>🌙 Mélatonine Naturelle</h3><p>Favorise un endormissement naturel et améliore les cycles du sommeil sans accoutumance.</p></div><div class="plan-actions"><span class="badge actif">Recommandé</span></div></div>
+    `;
+  }, 1500);
+}
+
+function searchProduct() {
+  const code = document.getElementById('barcodeInput').value;
+  if (!code) return;
+  const result = document.getElementById('product-result');
+  result.style.display = 'block';
+  result.innerHTML = `<div class="loading-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><p>Recherche des meilleurs produits...</p></div>`;
+  setTimeout(() => {
+    result.innerHTML = `<div class="card"><h3 style="margin-bottom:8px">Produit trouvé : Nutella (code: ${code})</h3><p style="font-size:.85rem;color:var(--text-sub);line-height:1.6">⚠️ Ce produit contient une grande quantité de sucre raffiné et d'huile de palme. Non recommandé selon votre profil de santé naturelle.</p><div style="margin-top:12px"><span class="badge" style="background:#fce8e8;color:#c0392b">Déconseillé</span></div></div>`;
+  }, 1500);
+}
+
+// ── COMMUNAUTÉ ──
+function filterCommunity(cat, el) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function publishPost() {
+  const title = document.getElementById('postTitle').value;
+  const content = document.getElementById('postContent').value;
+  const category = document.getElementById('postCategory').value;
+  if (!title || !content) return;
+  posts.unshift({ title, content, category, author: 'xinej66871', likes: 0 });
+  renderPosts();
+  closeModal('modal-post');
+  document.getElementById('postTitle').value = '';
+  document.getElementById('postContent').value = '';
+}
+
+function renderPosts() {
+  const container = document.getElementById('posts-container');
+  if (posts.length === 0) {
+    container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><h3>Aucun post pour le moment</h3><p>Soyez le premier à partager votre expérience !</p></div>`;
+    return;
+  }
+  container.innerHTML = posts.map((p,i) => `
+    <div class="post-card">
+      <div class="post-header">
+        <div class="post-author"><div class="post-avatar">${p.author.slice(0,2).toUpperCase()}</div><div><div style="font-size:.875rem;font-weight:600">${p.author}</div><div class="post-meta">À l'instant · ${p.category}</div></div></div>
+      </div>
+      <div class="post-title">${p.title}</div>
+      <div class="post-content">${p.content}</div>
+      <div class="post-footer">
+        <div class="post-like" onclick="likePost(${i},this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span>${p.likes}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function likePost(i, el) {
+  posts[i].likes++;
+  renderPosts();
+}
+
+// ── ÉVOLUTION ──
+function saveEvolution() {
+  closeModal('modal-evolution');
+  const container = document.querySelector('#page-evolution .empty-state');
+  if (container) {
+    container.innerHTML = `<div style="text-align:center;padding:20px"><svg viewBox="0 0 24 24" fill="none" stroke="#3d7a5a" stroke-width="2" width="40" height="40" style="margin:0 auto 12px;display:block"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><h3 style="color:#3d7a5a">Entrée enregistrée ! ✓</h3><p style="color:var(--text-sub);font-size:.875rem;margin-top:4px">Continuez chaque jour pour suivre votre évolution.</p></div>`;
+  }
+}
+
+// ── CSV STRAVA ──
+function handleCSV(input) {
+  if (!input.files[0]) return;
+  const zone = document.querySelector('.upload-area');
+  zone.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#3d7a5a" stroke-width="2" width="38" height="38" style="margin:0 auto 14px;display:block"><polyline points="20 6 9 17 4 12"/></svg><h3 style="color:#3d7a5a">Fichier importé avec succès !</h3><p>${input.files[0].name}</p>`;
+}
+</script>
+</body>
+</html>
