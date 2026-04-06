@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Naturavita — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-page: #eef0f3;
+    --bg-card: #ffffff;
+    --bg-input: #f5f6f8;
+    --border: #e2e5ea;
+    --text-primary: #12151a;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --olive: #6b7f55;
+    --olive-dark: #556445;
+    --gold: #c9952a;
+    --btn-dark: #111318;
+    --btn-dark-hover: #2a2d35;
+    --shadow-card: 0 2px 4px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08);
+    --shadow-btn: 0 2px 8px rgba(17,19,24,0.25);
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-page);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    /* Subtle noise texture */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-radius: 22px;
+    box-shadow: var(--shadow-card);
+    padding: 44px 40px 40px;
+    width: 100%;
+    max-width: 400px;
+    animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- LOGO ---- */
+  .logo-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .logo-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #7a9060, #556445);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 18px rgba(85,100,69,0.30);
+    position: relative;
+  }
+
+  .logo-circle svg {
+    width: 38px;
+    height: 38px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+  }
+
+  /* ---- HEADING ---- */
+  .heading {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .heading h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.75rem;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    margin-bottom: 5px;
+  }
+
+  .heading p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  /* ---- GOOGLE BTN ---- */
+  .btn-google {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 11px 16px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    text-decoration: none;
+  }
+
+  .btn-google:hover {
+    background: var(--bg-input);
+    border-color: #c8cdd6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .btn-google svg { flex-shrink: 0; }
+
+  /* ---- DIVIDER ---- */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .divider span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  /* ---- FORM ---- */
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-wrap .icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+  }
+
+  .input-wrap input {
+    width: 100%;
+    padding: 11px 14px 11px 38px;
+    background: var(--bg-input);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .input-wrap input::placeholder { color: var(--text-muted); }
+
+  .input-wrap input:focus {
+    background: #fff;
+    border-color: var(--olive);
+    box-shadow: 0 0 0 3px rgba(107,127,85,0.10);
+  }
+
+  /* ---- SIGN IN BTN ---- */
+  .btn-signin {
+    width: 100%;
+    padding: 13px;
+    background: var(--btn-dark);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: var(--shadow-btn);
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-signin:hover {
+    background: var(--btn-dark-hover);
+    box-shadow: 0 4px 16px rgba(17,19,24,0.35);
+  }
+
+  .btn-signin:active { transform: scale(0.99); }
+
+  /* ---- FOOTER LINKS ---- */
+  .footer-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+  }
+
+  .footer-links a {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .footer-links a:hover { color: var(--text-primary); }
+
+  .footer-links .signup-link {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .footer-links .signup-link a {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  /* ---- LOADING STATE ---- */
+  .btn-signin.loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Logo -->
+  <div class="logo-wrap">
+    <div class="logo-circle">
+      <!-- Maple/leaf icon golden -->
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M32 4 C32 4 28 14 20 16 C24 16 26 18 26 18 C20 22 14 28 16 38 C19 34 22 33 22 33 C21 38 22 44 28 50 L30 44 C30 44 31 52 32 58 C33 52 34 44 34 44 L36 50 C42 44 43 38 42 33 C42 33 45 34 48 38 C50 28 44 22 38 18 C38 18 40 16 44 16 C36 14 32 4 32 4Z"
+              fill="url(#goldGrad)" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+        <defs>
+          <linearGradient id="goldGrad" x1="16" y1="4" x2="48" y2="58" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#f0c040"/>
+            <stop offset="100%" stop-color="#c07a10"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Heading -->
+  <div class="heading">
+    <h1>Welcome to Naturavita</h1>
+    <p>Sign in to continue</p>
+  </div>
+
+  <!-- Google -->
+  <button class="btn-google" onclick="handleGoogle()">
+    <svg width="18" height="18" viewBox="0 0 18 18">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+      <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+    Continue with Google
+  </button>
+
+  <!-- Divider -->
+  <div class="divider"><span>or</span></div>
+
+  <!-- Email -->
+  <div class="form-group">
+    <label>Email</label>
+    <div class="input-wrap">
+      <span class="icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="M2 7l10 7 10-7"/>
+        </svg>
+      </span>
+      <input type="email" placeholder="you@example.com" id="email" autocomplete="email" />
+    </div>
+  </div>
+
+  <!-- Password -->
+  <div class="form-group">
+    <label>Password</label>
+    <div class="input-wrap">
+      <span class="icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </span>
+      <input type="password" placeholder="••••••••" id="password" autocomplete="current-password" />
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button class="btn-signin" id="signinBtn" onclick="handleSignin()">Sign in</button>
+
+  <!-- Footer -->
+  <div class="footer-links">
+    <a href="#">Forgot password?</a>
+    <span class="signup-link">Need an account? <a href="#">Sign up</a></span>
+  </div>
+
+</div>
+
+<script>
+  function handleGoogle() {
+    const btn = document.querySelector('.btn-google');
+    btn.style.opacity = '0.7';
+    btn.style.pointerEvents = 'none';
+    setTimeout(() => {
+      btn.style.opacity = '';
+      btn.style.pointerEvents = '';
+    }, 1500);
+  }
+
+  function handleSignin() {
+    const btn = document.getElementById('signinBtn');
+    const email = document.getElementById('email').value;
+    const pwd = document.getElementById('password').value;
+    if (!email || !pwd) {
+      btn.style.background = '#c0392b';
+      btn.textContent = 'Please fill in all fields';
+      setTimeout(() => {
+        btn.style.background = '';
+        btn.textContent = 'Sign in';
+      }, 1800);
+      return;
+    }
+    btn.classList.add('loading');
+    btn.textContent = 'Signing in…';
+    setTimeout(() => {
+      btn.classList.remove('loading');
+      btn.textContent = 'Sign in';
+    }, 2000);
+  }
+</script>
+
+</body>
+</html>
