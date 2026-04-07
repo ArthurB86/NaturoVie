@@ -1,5 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { NavLink } from 'react-router-dom'
 
 const navItems = [
   { to: '/dashboard', label: 'Tableau de bord', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
@@ -24,14 +23,6 @@ const s = {
 }
 
 export default function Sidebar() {
-  const { user, signOut } = useAuth()
-  const navigate = useNavigate()
-
-  const handleSignOut = async () => {
-    await signOut()
-    navigate('/login')
-  }
-
   return (
     <aside style={s.sidebar}>
       <div style={s.header}>
@@ -68,12 +59,9 @@ export default function Sidebar() {
       </nav>
 
       <div style={s.footer}>
-        <p style={{ fontSize: '.72rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 8 }}>
-          {user?.email}
+        <p style={{ fontSize: '.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+          La nature est votre meilleure alliée
         </p>
-        <button onClick={handleSignOut} style={{ fontSize: '.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-          Se déconnecter
-        </button>
       </div>
     </aside>
   )
